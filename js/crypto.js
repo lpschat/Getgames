@@ -1,30 +1,47 @@
 class GameCrypto {
     static async decrypt(encryptedText) {
-        const key = new TextEncoder().encode('consmkey');
-        const iv = new Uint8Array([18, 52, 86, 120, 144, 171, 205, 239]);
+        try {
+            // 使用指定的密钥
+            const keyMaterial = new TextEncoder().encode('consmkey');
 
-        const encryptedData = this.base64ToArrayBuffer(encryptedText);
+            // 使用固定的 IV
+            const iv = new Uint8Array([18, 52, 86, 120, 144, 171, 205, 239]);
 
-        const algorithm = {
-            name: 'DES-CBC',
-            iv: iv
-        };
+            // 由于原始IV是8字节，需要扩展到16字节（AES-CBC要求）
+            const fullIv = new Uint8Array(16);
+            fullIv.set(iv);  // 填充剩余字节为0
 
-        const cryptoKey = await crypto.subtle.importKey(
-            'raw',
-            key,
-            'DES-CBC',
-            false,
-            ['decrypt']
-        );
+            // 使用 AES-CBC 算法
+            const key = await crypto.subtle.importKey(
+                'raw',
+                keyMaterial,
+                {
+                    name: 'AES-CBC',
+                    length: 128  // 改为128位密钥长度
+                },
+                false,
+                ['decrypt']
+            );
 
-        const decrypted = await crypto.subtle.decrypt(
-            algorithm,
-            cryptoKey,
-            encryptedData
-        );
+            // Base64 解码
+            const encryptedData = this.base64ToArrayBuffer(encryptedText);
 
-        return new TextDecoder().decode(decrypted);
+            // 解密
+            const decryptedData = await crypto.subtle.decrypt(
+                {
+                    name: 'AES-CBC',
+                    iv: fullIv
+                },
+                key,
+                encryptedData
+            );
+
+            // 转换为文本
+            return new TextDecoder().decode(decryptedData);
+        } catch (error) {
+            console.error('解密失败:', error);
+            return encryptedText; // 如果解密失败，返回原文
+        }
     }
 
     static base64ToArrayBuffer(base64) {
@@ -34,5 +51,22 @@ class GameCrypto {
             bytes[i] = binaryString.charCodeAt(i);
         }
         return bytes;
+    }
+
+    static decryptIni(encryptedData) {
+        try {
+            // 简单的XOR解密示例
+            const key = new TextEncoder().encode('consmkey');
+            const result = new Uint8Array(encryptedData.length);
+
+            for (let i = 0; i < encryptedData.length; i++) {
+                result[i] = encryptedData[i] ^ key[i % key.length];
+            }
+
+            return result;
+        } catch (error) {
+            console.error('INI解密失败:', error);
+            return encryptedData;
+        }
     }
 } 

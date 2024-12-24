@@ -16,7 +16,6 @@ class GamePlatform {
 
     async loadGames() {
         try {
-            // 使用 Cloudflare Workers 代理URL
             const proxyUrl = 'https://getgames.llpplplp.workers.dev/games';
             const response = await fetch(proxyUrl);
 
@@ -26,16 +25,30 @@ class GamePlatform {
 
             const data = await response.json();
 
-            this.games = await Promise.all(data.Content.map(async item => ({
-                name1: await GameCrypto.decrypt(item.Name1),
-                name2: await GameCrypto.decrypt(item.Name2),
-                bh: await GameCrypto.decrypt(item.BH),
-                mm: await GameCrypto.decrypt(item.MM),
-                xingj: await GameCrypto.decrypt(item.XingJ)
-            })));
+            this.games = await Promise.all(data.Content.map(async item => {
+                try {
+                    return {
+                        name1: await GameCrypto.decrypt(item.Name1),
+                        name2: await GameCrypto.decrypt(item.Name2),
+                        bh: await GameCrypto.decrypt(item.BH),
+                        mm: await GameCrypto.decrypt(item.MM),
+                        xingj: await GameCrypto.decrypt(item.XingJ)
+                    };
+                } catch (decryptError) {
+                    console.error('游戏数据解密失败:', decryptError);
+                    // 返回未解密的数据作为后备
+                    return {
+                        name1: item.Name1,
+                        name2: item.Name2,
+                        bh: item.BH,
+                        mm: item.MM,
+                        xingj: item.XingJ
+                    };
+                }
+            }));
         } catch (error) {
             console.error('加载游戏列表失败:', error);
-            throw error; // 向上传播错误以便于错误处理
+            throw error;
         }
     }
 
@@ -113,7 +126,7 @@ class GamePlatform {
             this.updateModalContent(gameInfo);
             this.modal.show();
         } catch (error) {
-            console.error('加载游戏详情��败:', error);
+            console.error('加载游戏详情失败:', error);
         }
     }
 

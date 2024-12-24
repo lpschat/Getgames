@@ -3,6 +3,9 @@ class GamePlatform {
         this.games = [];
         this.modal = new bootstrap.Modal(document.getElementById('gameModal'));
         this.initializeEventListeners();
+        this.currentPage = 1;
+        this.gamesPerPage = 12; // 每页显示12个游戏
+        this.filteredGames = []; // 用于存储搜索过滤后的游戏
     }
 
     async initialize() {
@@ -81,13 +84,68 @@ class GamePlatform {
     }
 
     renderGames(games) {
-        const container = document.getElementById('gameGrid');
-        container.innerHTML = games.map(game => this.createGameCard(game)).join('');
+        this.filteredGames = games; // 保存过滤后的游戏列表
+        const startIndex = (this.currentPage - 1) * this.gamesPerPage;
+        const endIndex = startIndex + this.gamesPerPage;
+        const gamesToShow = games.slice(startIndex, endIndex);
 
-        // 加载所有游戏图片
-        games.forEach(game => {
+        const container = document.getElementById('gameGrid');
+        container.innerHTML = gamesToShow.map(game => this.createGameCard(game)).join('');
+
+        // 加载当前页面的游戏图片
+        gamesToShow.forEach(game => {
             this.loadGameImage(game.bh);
         });
+
+        // 渲染分页控件
+        this.renderPagination();
+    }
+
+    renderPagination() {
+        const totalPages = Math.ceil(this.filteredGames.length / this.gamesPerPage);
+        const paginationContainer = document.getElementById('pagination');
+
+        let paginationHtml = `
+            <nav aria-label="游戏列表分页">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${this.currentPage - 1}">上一页</a>
+                    </li>
+        `;
+
+        // 显示页码
+        for (let i = 1; i <= totalPages; i++) {
+            if (
+                i === 1 ||
+                i === totalPages ||
+                (i >= this.currentPage - 2 && i <= this.currentPage + 2)
+            ) {
+                paginationHtml += `
+                    <li class="page-item ${i === this.currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                    </li>
+                `;
+            } else if (
+                i === this.currentPage - 3 ||
+                i === this.currentPage + 3
+            ) {
+                paginationHtml += `
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                `;
+            }
+        }
+
+        paginationHtml += `
+                <li class="page-item ${this.currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${this.currentPage + 1}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+        `;
+
+        paginationContainer.innerHTML = paginationHtml;
     }
 
     createGameCard(game) {
@@ -142,12 +200,29 @@ class GamePlatform {
             }
         });
 
+        // 添加分页事件监听器
+        document.getElementById('pagination').addEventListener('click', e => {
+            e.preventDefault();
+            const pageLink = e.target.closest('.page-link');
+            if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
+                const newPage = parseInt(pageLink.dataset.page);
+                if (newPage && newPage !== this.currentPage) {
+                    this.currentPage = newPage;
+                    this.renderGames(this.filteredGames);
+                    // 滚动到页面顶部
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+
+        // 修改搜索事件监听器
         document.getElementById('searchInput').addEventListener('input', e => {
             const searchTerm = e.target.value.toLowerCase();
             const filteredGames = this.games.filter(game =>
                 game.name1.toLowerCase().includes(searchTerm) ||
                 game.name2.toLowerCase().includes(searchTerm)
             );
+            this.currentPage = 1; // 重置到第一页
             this.renderGames(filteredGames);
         });
     }

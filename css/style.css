@@ -91,3 +91,16 @@
     background: #0056b3;
     color: white;
 }
+
+.pagination {
+    margin-bottom: 2rem;
+}
+
+.page-link {
+    color: #666;
+}
+
+.page-item.active .page-link {
+    background-color: #666;
+    border-color: #666;
+}

@@ -1,30 +1,45 @@
 class GameCrypto {
     static async decrypt(encryptedText) {
         try {
-            // 使用指定的密钥并确保它是16字节（128位）
-            const rawKey = 'consmkey'.padEnd(16, '\0');  // 填充到16字节
-            const keyMaterial = new TextEncoder().encode(rawKey);
-
-            // 使用固定的 IV
+            // 使用固定的密钥和IV
+            const key = new TextEncoder().encode('consmkey');
             const iv = new Uint8Array([18, 52, 86, 120, 144, 171, 205, 239]);
 
-            // 由于原始IV是8字节，需要扩展到16字节（AES-CBC要求）
-            const fullIv = new Uint8Array(16);
-            fullIv.set(iv);  // 填充剩余字节为0
-
-            // 使用 AES-CBC 算法
-            const key = await crypto.subtle.importKey(
+            // 使用PBKDF2生成适当长度的密钥
+            const importedKey = await crypto.subtle.importKey(
                 'raw',
-                keyMaterial,
+                key,
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits']
+            );
+
+            const derivedKey = await crypto.subtle.deriveBits(
                 {
-                    name: 'AES-CBC'  // 移除 length 参数，让系统自动从密钥材料推断
+                    name: 'PBKDF2',
+                    salt: new Uint8Array(8),  // 空盐值
+                    iterations: 1000,
+                    hash: 'SHA-256'
                 },
+                importedKey,
+                256  // 生成256位密钥
+            );
+
+            // 导入派生的密钥用于AES-CBC
+            const aesKey = await crypto.subtle.importKey(
+                'raw',
+                derivedKey,
+                { name: 'AES-CBC' },
                 false,
                 ['decrypt']
             );
 
-            // Base64 解码
+            // Base64解码
             const encryptedData = this.base64ToArrayBuffer(encryptedText);
+
+            // 使用16字节IV（填充剩余字节为0）
+            const fullIv = new Uint8Array(16);
+            fullIv.set(iv);
 
             // 解密
             const decryptedData = await crypto.subtle.decrypt(
@@ -32,7 +47,7 @@ class GameCrypto {
                     name: 'AES-CBC',
                     iv: fullIv
                 },
-                key,
+                aesKey,
                 encryptedData
             );
 
@@ -40,7 +55,13 @@ class GameCrypto {
             return new TextDecoder().decode(decryptedData);
         } catch (error) {
             console.error('解密失败:', error);
-            return encryptedText; // 如果解密失败，返回原文
+            // 如果解密失败，尝试直接解码Base64
+            try {
+                return atob(encryptedText);
+            } catch (e) {
+                console.error('Base64解码也失败:', e);
+                return encryptedText;
+            }
         }
     }
 
@@ -62,14 +83,21 @@ class GameCrypto {
             }
 
             // 使用GBK解码
-            // 注意：需要引入GBK解码库，因为JavaScript默认不支持GBK
             try {
-                // 尝试使用TextDecoder的GBK支持（部分现代浏览器支持）
-                const decoder = new TextDecoder('gbk');
-                return decoder.decode(result);
+                if (typeof TextDecoder !== 'undefined') {
+                    try {
+                        // 首先尝试使用GBK
+                        return new TextDecoder('gbk').decode(result);
+                    } catch (e) {
+                        // 如果GBK不可用，尝试使用GB18030（GBK的超集）
+                        return new TextDecoder('gb18030').decode(result);
+                    }
+                } else {
+                    // 如果TextDecoder不可用，使用text-encoding polyfill
+                    return new TextDecoder('gbk', { NONSTANDARD_allowLegacyEncoding: true }).decode(result);
+                }
             } catch (e) {
-                console.warn('浏览器不支持GBK解码，将回退到UTF-8');
-                // 如果浏览器不支持GBK，回退到UTF-8
+                console.warn('GBK解码失败，回退到UTF-8:', e);
                 return new TextDecoder('utf-8').decode(result);
             }
         } catch (error) {
@@ -78,12 +106,11 @@ class GameCrypto {
         }
     }
 
-    // 添加一个解析INI内容的辅助方法
     static parseIni(content) {
         const result = {};
         let currentSection = '';
 
-        // 按行分割
+        // 按行分割，同时处理不同的换行符
         const lines = content.split(/\r?\n/);
 
         for (const line of lines) {
@@ -93,19 +120,21 @@ class GameCrypto {
             if (!trimmedLine || trimmedLine.startsWith(';')) continue;
 
             // 检查是否是节名
-            const sectionMatch = trimmedLine.match(/^\[(.*)\]$/);
+            const sectionMatch = trimmedLine.match(/^\[(.*?)\]$/);
             if (sectionMatch) {
-                currentSection = sectionMatch[1];
+                currentSection = sectionMatch[1].trim();
                 result[currentSection] = {};
                 continue;
             }
 
             // 解析键值对
-            const keyValueMatch = trimmedLine.match(/^([^=]+)=(.*)$/);
-            if (keyValueMatch && currentSection) {
-                const key = keyValueMatch[1].trim();
-                const value = keyValueMatch[2].trim();
-                result[currentSection][key] = value;
+            if (currentSection) {
+                const keyValueMatch = trimmedLine.match(/^([^=]+?)=(.*)$/);
+                if (keyValueMatch) {
+                    const key = keyValueMatch[1].trim();
+                    const value = keyValueMatch[2].trim();
+                    result[currentSection][key] = value;
+                }
             }
         }
 

@@ -15,28 +15,44 @@ class GamePlatform {
     }
 
     async loadGames() {
-        const response = await fetch('https://002001a.oss-accelerate.aliyuncs.com/b/WenJian.json');
-        const data = await response.json();
+        try {
+            // 使用 Cloudflare Workers 代理URL
+            const proxyUrl = 'https://your-worker.your-subdomain.workers.dev/games';
+            const response = await fetch(proxyUrl);
 
-        this.games = await Promise.all(data.Content.map(async item => ({
-            name1: await GameCrypto.decrypt(item.Name1),
-            name2: await GameCrypto.decrypt(item.Name2),
-            bh: await GameCrypto.decrypt(item.BH),
-            mm: await GameCrypto.decrypt(item.MM),
-            xingj: await GameCrypto.decrypt(item.XingJ)
-        })));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            this.games = await Promise.all(data.Content.map(async item => ({
+                name1: await GameCrypto.decrypt(item.Name1),
+                name2: await GameCrypto.decrypt(item.Name2),
+                bh: await GameCrypto.decrypt(item.BH),
+                mm: await GameCrypto.decrypt(item.MM),
+                xingj: await GameCrypto.decrypt(item.XingJ)
+            })));
+        } catch (error) {
+            console.error('加载游戏列表失败:', error);
+            throw error; // 向上传播错误以便于错误处理
+        }
     }
 
     async loadGameImage(bh) {
         try {
-            // 获取游戏的 INI 文件
-            const iniUrl = `https://002001a.oss-accelerate.aliyuncs.com/c/${bh}.txt`;
-            const response = await fetch(iniUrl);
+            // 使用相同的代理服务器获取INI文件
+            const proxyUrl = `https://getgames.llpplplp.workers.dev/game/${bh}`;
+            const response = await fetch(proxyUrl);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const encryptedData = await response.arrayBuffer();
             const decryptedData = this.decryptIni(new Uint8Array(encryptedData));
             const gameInfo = this.parseIni(decryptedData);
 
-            // 更新图片 URL
             const imageUrl = gameInfo.C1.sc2;
             const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
             imgElements.forEach(img => {
@@ -97,7 +113,7 @@ class GamePlatform {
             this.updateModalContent(gameInfo);
             this.modal.show();
         } catch (error) {
-            console.error('加载游戏详情失败:', error);
+            console.error('加载游戏详情��败:', error);
         }
     }
 

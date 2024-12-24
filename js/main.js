@@ -15,7 +15,7 @@ class GamePlatform {
     }
 
     async loadGames() {
-        const response = await fetch('http://002001a.oss-accelerate.aliyuncs.com/b/WenJian.json');
+        const response = await fetch('https://002001a.oss-accelerate.aliyuncs.com/b/WenJian.json');
         const data = await response.json();
 
         this.games = await Promise.all(data.Content.map(async item => ({
@@ -30,7 +30,7 @@ class GamePlatform {
     async loadGameImage(bh) {
         try {
             // 获取游戏的 INI 文件
-            const iniUrl = `http://002001a.oss-accelerate.aliyuncs.com/c/${bh}.txt`;
+            const iniUrl = `https://002001a.oss-accelerate.aliyuncs.com/c/${bh}.txt`;
             const response = await fetch(iniUrl);
             const encryptedData = await response.arrayBuffer();
             const decryptedData = this.decryptIni(new Uint8Array(encryptedData));
@@ -86,7 +86,7 @@ class GamePlatform {
 
     async showGameDetails(bh) {
         try {
-            const iniUrl = `http://002001a.oss-accelerate.aliyuncs.com/c/${bh}.txt`;
+            const iniUrl = `https://002001a.oss-accelerate.aliyuncs.com/c/${bh}.txt`;
             const response = await fetch(iniUrl);
             const encryptedData = await response.arrayBuffer();
 

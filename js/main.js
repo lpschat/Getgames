@@ -17,7 +17,7 @@ class GamePlatform {
     async loadGames() {
         try {
             // 使用 Cloudflare Workers 代理URL
-            const proxyUrl = 'https://your-worker.your-subdomain.workers.dev/games';
+            const proxyUrl = 'https://getgames.llpplplp.workers.dev/games';
             const response = await fetch(proxyUrl);
 
             if (!response.ok) {

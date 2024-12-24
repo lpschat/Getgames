@@ -54,7 +54,6 @@ class GamePlatform {
 
     async loadGameImage(bh) {
         try {
-            // 使用相同的代理服务器获取INI文件
             const proxyUrl = `https://getgames.llpplplp.workers.dev/game/${bh}`;
             const response = await fetch(proxyUrl);
 
@@ -63,14 +62,19 @@ class GamePlatform {
             }
 
             const encryptedData = await response.arrayBuffer();
-            const decryptedData = this.decryptIni(new Uint8Array(encryptedData));
-            const gameInfo = this.parseIni(decryptedData);
+            // 解密INI文件
+            const decryptedContent = GameCrypto.decryptIni(new Uint8Array(encryptedData));
+            // 解析INI内容
+            const gameInfo = GameCrypto.parseIni(decryptedContent);
 
-            const imageUrl = gameInfo.C1.sc2;
-            const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
-            imgElements.forEach(img => {
-                img.src = imageUrl;
-            });
+            // 获取图片URL
+            if (gameInfo.C1 && gameInfo.C1.sc2) {
+                const imageUrl = gameInfo.C1.sc2;
+                const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
+                imgElements.forEach(img => {
+                    img.src = imageUrl;
+                });
+            }
         } catch (error) {
             console.error(`加载游戏图片失败 (BH: ${bh}):`, error);
         }

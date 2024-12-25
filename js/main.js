@@ -177,7 +177,7 @@ class GamePlatform {
 
     async showGameDetails(bh) {
         try {
-            const iniUrl = `https://002001a.oss-accelerate.aliyuncs.com/c/${bh}.txt`;
+            const iniUrl = `https://getgames.llpplplp.workers.dev/${bh}`;
             const response = await fetch(iniUrl);
             const encryptedData = await response.arrayBuffer();
 

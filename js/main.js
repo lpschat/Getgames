@@ -6,6 +6,8 @@ class GamePlatform {
         this.currentPage = 1;
         this.gamesPerPage = 12; // 每页显示12个游戏
         this.filteredGames = []; // 用于存储搜索过滤后的游戏
+        this.imageCache = new Map(); // 添加图片缓存
+        this.initializeLazyLoading();
 
         // 添加模态框关闭事件监听
         document.getElementById('gameModal').addEventListener('hidden.bs.modal', () => {
@@ -15,6 +17,23 @@ class GamePlatform {
                 video.pause();
                 video.currentTime = 0;
             });
+        });
+    }
+
+    initializeLazyLoading() {
+        // 使用 Intersection Observer 实现图片懒加载
+        this.imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    this.loadGameImage(img.dataset.bh);
+                    observer.unobserve(img);
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '50px', // 提前50px开始加载
+            threshold: 0.1
         });
     }
 
@@ -28,6 +47,7 @@ class GamePlatform {
     }
 
     async loadGames() {
+        this.showLoading(); // 显示加载状态
         try {
             const proxyUrl = 'https://getgames.llpplplp.workers.dev/games';
             const response = await fetch(proxyUrl);
@@ -70,13 +90,26 @@ class GamePlatform {
                 return dateB - dateA; // 降序排序，最新的在前
             });
 
+            // 添加数据缓存
+            localStorage.setItem('gamesCache', JSON.stringify({
+                timestamp: Date.now(),
+                data: this.games
+            }));
         } catch (error) {
-            console.error('加载游戏列表失败:', error);
-            throw error;
+            this.showError('加载失败，请稍后重试');
+        } finally {
+            this.hideLoading();
         }
     }
 
     async loadGameImage(bh) {
+        // 检查缓存
+        if (this.imageCache.has(bh)) {
+            const cachedUrl = this.imageCache.get(bh);
+            this.updateGameImages(bh, cachedUrl);
+            return;
+        }
+
         try {
             const proxyUrl = `https://getgames.llpplplp.workers.dev/game/${bh}`;
             const response = await fetch(proxyUrl);
@@ -98,6 +131,11 @@ class GamePlatform {
                 imgElements.forEach(img => {
                     img.src = imageUrl;
                 });
+            }
+
+            // 缓存图片URL
+            if (imageUrl) {
+                this.imageCache.set(bh, imageUrl);
             }
         } catch (error) {
             console.error(`加载游戏图片失败 (BH: ${bh}):`, error);
@@ -354,6 +392,43 @@ class GamePlatform {
         if (screenshots.length > 0) {
             new bootstrap.Carousel(document.getElementById('screenshotCarousel'));
         }
+    }
+
+    // 添加加载状态管理
+    showLoading() {
+        const loader = document.createElement('div');
+        loader.className = 'loading-overlay';
+        loader.innerHTML = `
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+        `;
+        document.body.appendChild(loader);
+    }
+
+    hideLoading() {
+        const loader = document.querySelector('.loading-overlay');
+        if (loader) {
+            loader.remove();
+        }
+    }
+
+    showError(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification error';
+        toast.innerHTML = `
+            <div class="toast-content">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        // 自动消失
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 }
 

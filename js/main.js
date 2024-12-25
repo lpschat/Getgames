@@ -45,20 +45,29 @@ class GamePlatform {
                         name2: await GameCrypto.decrypt(item.Name2),
                         bh: await GameCrypto.decrypt(item.BH),
                         mm: await GameCrypto.decrypt(item.MM),
-                        xingj: await GameCrypto.decrypt(item.XingJ)
+                        xingj: await GameCrypto.decrypt(item.XingJ),
+                        riq: await GameCrypto.decrypt(item.RiQ)
                     };
                 } catch (decryptError) {
                     console.error('游戏数据解密失败:', decryptError);
-                    // 返回未解密的数据作为后备
                     return {
                         name1: item.Name1,
                         name2: item.Name2,
                         bh: item.BH,
                         mm: item.MM,
-                        xingj: item.XingJ
+                        xingj: item.XingJ,
+                        riq: item.RiQ
                     };
                 }
             }));
+
+            // 按日期排序，最新的在前面
+            this.games.sort((a, b) => {
+                const dateA = new Date(a.riq);
+                const dateB = new Date(b.riq);
+                return dateB - dateA;
+            });
+
         } catch (error) {
             console.error('加载游戏列表失败:', error);
             throw error;
@@ -173,7 +182,10 @@ class GamePlatform {
                              onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E'">
                     </div>
                     <div class="game-title">${game.name1}</div>
-                    <div class="rating">${this.getStarRating(parseFloat(game.xingj))}</div>
+                    <div class="game-info">
+                        <div class="rating">${this.getStarRating(parseFloat(game.xingj))}</div>
+                        <div class="update-date">${game.riq}</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -316,6 +328,11 @@ class GamePlatform {
                                     </a>
                                 `).join('')}
                             </div>
+                            ${this.game?.mm ? `
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-key"></i> 解压密码：${this.game.mm}
+                                </div>
+                            ` : ''}
                         ` : '<p>暂无下载链接</p>'}
                     </div>
                     <div class="mt-3">

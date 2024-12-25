@@ -104,3 +104,144 @@
     background-color: #666;
     border-color: #666;
 }
+
+/* 游戏详情模态框样式 */
+.game-detail-container {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* 视频容器样式 */
+.game-video-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    /* 16:9 比例 */
+    height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.game-video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 游戏截图轮播图样式 */
+.game-screenshots {
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.carousel {
+    background-color: #000;
+}
+
+.carousel-item {
+    height: 400px;
+    /* 固定高度，保持一致性 */
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* 保持图片比例 */
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 10%;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* 游戏信息区域样式 */
+.game-detail-info {
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.game-detail-info h5 {
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.game-detail-info p {
+    color: #666;
+    line-height: 1.6;
+}
+
+/* 下载链接样式 */
+.download-section {
+    margin-top: 20px;
+}
+
+.list-group-item {
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.badge {
+    font-size: 0.85em;
+    padding: 5px 10px;
+}
+
+/* 更新时间样式 */
+.text-muted {
+    color: #888 !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .carousel-item {
+        height: 300px;
+    }
+
+    .game-detail-container {
+        padding: 10px;
+    }
+
+    .game-detail-info {
+        padding: 15px;
+    }
+}
+
+/* 模态框滚动条美化 */
+.game-detail-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.game-detail-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.game-detail-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.game-detail-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

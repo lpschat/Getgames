@@ -232,59 +232,95 @@ class GamePlatform {
         const modalBody = document.querySelector('#gameModal .modal-body');
 
         // 获取游戏基本信息
-        const gameName = gameInfo.C1?.mc || '未知游戏';
-        const gameDesc = gameInfo.C1?.js || '暂无描述';
+        const updateDate = gameInfo.time?.sj || '未知日期';
+        const gameDesc = gameInfo.zhu?.yxbb || '暂无描述';
         const gameImage = gameInfo.C1?.sc2 || '';
+        const videoUrl = gameInfo.C1?.sc1;
 
-        // 更新模态框标题
-        modalTitle.textContent = gameName;
+        // 获取所有有效的游戏截图
+        const screenshots = Object.entries(gameInfo.C1 || {})
+            .filter(([key, value]) => key.startsWith('sc') && value !== 'WLCW' && key !== 'sc1')
+            .map(([_, url]) => url);
+
+        // 构建下载链接
+        const downloads = [];
+        for (let i = 1; i <= 3; i++) {
+            const name = gameInfo.xiazai[`xiazai${i}_ming`];
+            const url = gameInfo.xiazai[`xiazai${i}_dizhi`];
+            const pwd = gameInfo.xiazai[`xiazai${i}_fwm`];
+
+            if (name && name !== 'WLCW' && url && url !== 'WLCW') {
+                downloads.push({
+                    name,
+                    url,
+                    pwd: pwd !== 'WLCW' ? pwd : null
+                });
+            }
+        }
 
         // 构建模态框内容
         const content = `
             <div class="game-detail-container">
-                <div class="game-detail-image">
-                    <img src="${gameImage}" alt="${gameName}" 
-                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E'">
+                <div class="game-media-section">
+                    ${videoUrl && videoUrl !== 'WLCW' ? `
+                        <div class="game-video-container mb-3">
+                            <video controls class="w-100">
+                                <source src="${videoUrl}" type="video/mp4">
+                                您的浏览器不支持视频播放。
+                            </video>
+                        </div>
+                    ` : ''}
+                    <div class="game-screenshots">
+                        <div id="screenshotCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                ${screenshots.map((url, index) => `
+                                    <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                        <img src="${url}" class="d-block w-100" alt="游戏截图">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${screenshots.length > 1 ? `
+                                <button class="carousel-control-prev" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">上一张</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">下一张</span>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
                 </div>
-                <div class="game-detail-info">
+                <div class="game-detail-info mt-3">
                     <h5>游戏描述</h5>
                     <p>${gameDesc}</p>
-                    ${this.generateGameInfoTable(gameInfo)}
+                    <div class="download-section mt-3">
+                        <h5>下载链接</h5>
+                        ${downloads.length > 0 ? `
+                            <div class="list-group">
+                                ${downloads.map(dl => `
+                                    <a href="${dl.url}" target="_blank" class="list-group-item list-group-item-action">
+                                        ${dl.name}
+                                        ${dl.pwd ? `<span class="badge bg-secondary float-end">提取码: ${dl.pwd}</span>` : ''}
+                                    </a>
+                                `).join('')}
+                            </div>
+                        ` : '<p>暂无下载链接</p>'}
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">更新时间: ${updateDate}</small>
+                    </div>
                 </div>
             </div>
         `;
 
         modalBody.innerHTML = content;
-    }
 
-    generateGameInfoTable(gameInfo) {
-        // 从C1部分提取关键信息
-        const info = gameInfo.C1 || {};
-        const tableRows = [];
-
-        // 添加可能存在的游戏信息字段
-        if (info.bb) tableRows.push(['版本', info.bb]);
-        if (info.zz) tableRows.push(['作者', info.zz]);
-        if (info.rj) tableRows.push(['软件', info.rj]);
-        if (info.dx) tableRows.push(['大小', info.dx]);
-        if (info.gx) tableRows.push(['更新', info.gx]);
-
-        // 如果没有任何信息，返回空字符串
-        if (tableRows.length === 0) return '';
-
-        // 构建表格HTML
-        return `
-            <table class="table table-striped mt-3">
-                <tbody>
-                    ${tableRows.map(([key, value]) => `
-                        <tr>
-                            <th scope="row">${key}</th>
-                            <td>${value}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
+        // 初始化新的轮播图
+        if (screenshots.length > 0) {
+            new bootstrap.Carousel(document.getElementById('screenshotCarousel'));
+        }
     }
 }
 

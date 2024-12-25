@@ -38,6 +38,7 @@ class GamePlatform {
 
             const data = await response.json();
 
+            // 先解密所有数据
             this.games = await Promise.all(data.Content.map(async item => {
                 try {
                     return {
@@ -61,11 +62,12 @@ class GamePlatform {
                 }
             }));
 
-            // 按日期排序，最新的在前面
+            // 对整个游戏列表进行排序
             this.games.sort((a, b) => {
-                const dateA = new Date(a.riq);
-                const dateB = new Date(b.riq);
-                return dateB - dateA;
+                // 将日期字符串转换为时间戳进行比较
+                const dateA = new Date(a.riq.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).getTime();
+                const dateB = new Date(b.riq.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).getTime();
+                return dateB - dateA; // 降序排序，最新的在前
             });
 
         } catch (error) {
@@ -199,6 +201,10 @@ class GamePlatform {
 
     async showGameDetails(bh) {
         try {
+            // 保存当前游戏信息
+            this.currentGame = this.games.find(game => game.bh === bh);
+            console.log('当前游戏信息:', this.currentGame); // 调试输出
+
             const iniUrl = `https://getgames.llpplplp.workers.dev/game/${bh}`;
             const response = await fetch(iniUrl);
             const encryptedData = await response.arrayBuffer();
@@ -328,9 +334,9 @@ class GamePlatform {
                                     </a>
                                 `).join('')}
                             </div>
-                            ${this.game?.mm ? `
+                            ${this.currentGame?.mm && this.currentGame.mm !== 'WLCW' ? `
                                 <div class="alert alert-info mt-3">
-                                    <i class="fas fa-key"></i> 解压密码：${this.game.mm}
+                                    <i class="fas fa-key"></i> 解压密码：${this.currentGame.mm}
                                 </div>
                             ` : ''}
                         ` : '<p>暂无下载链接</p>'}

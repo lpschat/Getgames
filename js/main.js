@@ -182,8 +182,8 @@ class GamePlatform {
             const encryptedData = await response.arrayBuffer();
 
             // 解密INI数据
-            const decryptedData = this.decryptIni(new Uint8Array(encryptedData));
-            const gameInfo = this.parseIni(decryptedData);
+            const decryptedData = GameCrypto.decryptIni(new Uint8Array(encryptedData));
+            const gameInfo = GameCrypto.parseIni(decryptedData);
 
             this.updateModalContent(gameInfo);
             this.modal.show();

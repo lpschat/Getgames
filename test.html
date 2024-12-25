@@ -37,54 +37,52 @@
         </div>
     </div>
 
-    <script>
-        function fetchAndDecryptJson() {
-            const script = document.createElement('script');
-            const url = 'https://002001a.oss-accelerate.aliyuncs.com/b/WenJian.json?callback=handleJsonpResponse';
-            script.src = url;
-            document.body.appendChild(script);
-        }
+<script>
+    async function fetchAndDecryptJson() {
+        try {
+            const response = await fetch('https://gamesproxy.llpplplp.workers.dev/') // 使用你的Cloudflare Worker URL
+            if (!response.ok) throw new Error('Network response was not ok');
+            const jsonData = await response.json();
 
-        function handleJsonpResponse(jsonData) {
-            try {
-                jsonData.forEach(item => {
-                    decryptItem(item);
-                });
-                document.getElementById('result').innerText = JSON.stringify(jsonData, null, 2);
-            } catch (error) {
-                document.getElementById('result').innerText = '解密数据时发生错误: ' + error.message;
+            jsonData.forEach(item => {
+                decryptItem(item);
+            });
+            document.getElementById('result').innerText = JSON.stringify(jsonData, null, 2);
+        } catch (error) {
+            document.getElementById('result').innerText = '获取数据时发生错误: ' + error.message;
+        }
+    }
+
+    function decryptItem(item) {
+        item.BiaoQ = decrypt(item.BiaoQ);
+        item.XingJ = decrypt(item.XingJ);
+        item.MageA = decrypt(item.MageA);
+        item.RongL = decrypt(item.RongL);
+        item.RiQ = decrypt(item.RiQ);
+        item.Category = decrypt(item.Category);
+        item.BH = decrypt(item.BH);
+        item.MM = decrypt(item.MM);
+        item.Name1 = decrypt(item.Name1);
+        item.Name2 = decrypt(item.Name2);
+    }
+
+    function decrypt(encryptedText) {
+        const key = CryptoJS.enc.Utf8.parse('consmkey');
+        const iv = CryptoJS.enc.Hex.parse('1234567890abcdef');
+
+        const decrypted = CryptoJS.DES.decrypt(
+            { ciphertext: CryptoJS.enc.Base64.parse(encryptedText) },
+            key,
+            {
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7,
+                iv: iv
             }
-        }
+        );
 
-        function decryptItem(item) {
-            item.BiaoQ = decrypt(item.BiaoQ);
-            item.XingJ = decrypt(item.XingJ);
-            item.MageA = decrypt(item.MageA);
-            item.RongL = decrypt(item.RongL);
-            item.RiQ = decrypt(item.RiQ);
-            item.Category = decrypt(item.Category);
-            item.BH = decrypt(item.BH);
-            item.MM = decrypt(item.MM);
-            item.Name1 = decrypt(item.Name1);
-            item.Name2 = decrypt(item.Name2);
-        }
+        return decrypted.toString(CryptoJS.enc.Utf8);
+    }
+</script>
 
-        function decrypt(encryptedText) {
-            const key = CryptoJS.enc.Utf8.parse('consmkey');
-            const iv = CryptoJS.enc.Hex.parse('1234567890abcdef');
-
-            const decrypted = CryptoJS.DES.decrypt(
-                { ciphertext: CryptoJS.enc.Base64.parse(encryptedText) },
-                key,
-                {
-                    mode: CryptoJS.mode.CBC,
-                    padding: CryptoJS.pad.Pkcs7,
-                    iv: iv
-                }
-            );
-
-            return decrypted.toString(CryptoJS.enc.Utf8);
-        }
-    </script>
 </body>
 </html>

@@ -296,25 +296,6 @@ html {
     animation: shimmer 1.5s infinite;
 }
 
-/* 添加深色模式支持 */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background-color: #1a1a1a;
-        --text-color: #ffffff;
-        --card-background: #2d2d2d;
-        --border-color: #404040;
-    }
-
-    .game-card {
-        background-color: var(--card-background);
-        color: var(--text-color);
-    }
-
-    .loading-overlay {
-        background: rgba(0, 0, 0, 0.8);
-    }
-}
-
 /* 添加响应式图片加载提示 */
 .image-loading {
     position: relative;

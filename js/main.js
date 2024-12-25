@@ -226,6 +226,66 @@ class GamePlatform {
             this.renderGames(filteredGames);
         });
     }
+
+    updateModalContent(gameInfo) {
+        const modalTitle = document.querySelector('#gameModal .modal-title');
+        const modalBody = document.querySelector('#gameModal .modal-body');
+
+        // 获取游戏基本信息
+        const gameName = gameInfo.C1?.mc || '未知游戏';
+        const gameDesc = gameInfo.C1?.js || '暂无描述';
+        const gameImage = gameInfo.C1?.sc2 || '';
+
+        // 更新模态框标题
+        modalTitle.textContent = gameName;
+
+        // 构建模态框内容
+        const content = `
+            <div class="game-detail-container">
+                <div class="game-detail-image">
+                    <img src="${gameImage}" alt="${gameName}" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="game-detail-info">
+                    <h5>游戏描述</h5>
+                    <p>${gameDesc}</p>
+                    ${this.generateGameInfoTable(gameInfo)}
+                </div>
+            </div>
+        `;
+
+        modalBody.innerHTML = content;
+    }
+
+    generateGameInfoTable(gameInfo) {
+        // 从C1部分提取关键信息
+        const info = gameInfo.C1 || {};
+        const tableRows = [];
+
+        // 添加可能存在的游戏信息字段
+        if (info.bb) tableRows.push(['版本', info.bb]);
+        if (info.zz) tableRows.push(['作者', info.zz]);
+        if (info.rj) tableRows.push(['软件', info.rj]);
+        if (info.dx) tableRows.push(['大小', info.dx]);
+        if (info.gx) tableRows.push(['更新', info.gx]);
+
+        // 如果没有任何信息，返回空字符串
+        if (tableRows.length === 0) return '';
+
+        // 构建表格HTML
+        return `
+            <table class="table table-striped mt-3">
+                <tbody>
+                    ${tableRows.map(([key, value]) => `
+                        <tr>
+                            <th scope="row">${key}</th>
+                            <td>${value}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
 }
 
 // 初始化应用

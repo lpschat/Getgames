@@ -40,13 +40,22 @@
 <script>
     async function fetchAndDecryptJson() {
         try {
-            const response = await fetch('https://gamesproxy.llpplplp.workers.dev/') // 使用你的Cloudflare Worker URL
+            const response = await fetch('https://gamesproxy.llpplplp.workers.dev');
             if (!response.ok) throw new Error('Network response was not ok');
-            const jsonData = await response.json();
+
+            const data = await response.json();
+
+            // 确保获取到的数据是对象，并且Content是数组
+            if (!data.Content || !Array.isArray(data.Content)) {
+                throw new Error('Response Content is not an array');
+            }
+
+            const jsonData = data.Content;
 
             jsonData.forEach(item => {
                 decryptItem(item);
             });
+
             document.getElementById('result').innerText = JSON.stringify(jsonData, null, 2);
         } catch (error) {
             document.getElementById('result').innerText = '获取数据时发生错误: ' + error.message;
@@ -83,6 +92,7 @@
         return decrypted.toString(CryptoJS.enc.Utf8);
     }
 </script>
+
 
 </body>
 </html>

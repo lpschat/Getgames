@@ -6,6 +6,16 @@ class GamePlatform {
         this.currentPage = 1;
         this.gamesPerPage = 12; // 每页显示12个游戏
         this.filteredGames = []; // 用于存储搜索过滤后的游戏
+
+        // 添加模态框关闭事件监听
+        document.getElementById('gameModal').addEventListener('hidden.bs.modal', () => {
+            // 找到模态框中的所有视频元素并停止播放
+            const videos = document.querySelectorAll('#gameModal video');
+            videos.forEach(video => {
+                video.pause();
+                video.currentTime = 0;
+            });
+        });
     }
 
     async initialize() {

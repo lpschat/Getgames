@@ -38,19 +38,21 @@
     </div>
 
     <script>
-        async function fetchAndDecryptJson() {
-            try {
-                const url = 'https://002001a.oss-accelerate.aliyuncs.com/b/WenJian.json?callback=handleJsonpResponse';
-                const response = await fetch(url);
-                const jsonData = await response.json();
+        function fetchAndDecryptJson() {
+            const script = document.createElement('script');
+            const url = 'https://002001a.oss-accelerate.aliyuncs.com/b/WenJian.json?callback=handleJsonpResponse';
+            script.src = url;
+            document.body.appendChild(script);
+        }
 
+        function handleJsonpResponse(jsonData) {
+            try {
                 jsonData.forEach(item => {
                     decryptItem(item);
                 });
-
                 document.getElementById('result').innerText = JSON.stringify(jsonData, null, 2);
             } catch (error) {
-                document.getElementById('result').innerText = '获取或解密数据时发生错误: ' + error.message;
+                document.getElementById('result').innerText = '解密数据时发生错误: ' + error.message;
             }
         }
 

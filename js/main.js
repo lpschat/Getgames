@@ -49,7 +49,7 @@ class GamePlatform {
     async loadGames() {
         this.showLoading(); // 显示加载状态
         try {
-            const proxyUrl = 'https://getgames.llpplplp.workers.dev/games';
+            const proxyUrl = 'https://works.llpp.us.kg/games';
             const response = await fetch(proxyUrl);
 
             if (!response.ok) {
@@ -111,7 +111,7 @@ class GamePlatform {
         }
 
         try {
-            const proxyUrl = `https://getgames.llpplplp.workers.dev/game/${bh}`;
+            const proxyUrl = `https://works.llpp.us.kg/game/${bh}`;
             const response = await fetch(proxyUrl);
 
             if (!response.ok) {
@@ -243,7 +243,7 @@ class GamePlatform {
             this.currentGame = this.games.find(game => game.bh === bh);
             console.log('当前游戏信息:', this.currentGame); // 调试输出
 
-            const iniUrl = `https://getgames.llpplplp.workers.dev/game/${bh}`;
+            const iniUrl = `https://works.llpp.us.kg/game/${bh}`;
             const response = await fetch(iniUrl);
             const encryptedData = await response.arrayBuffer();
 

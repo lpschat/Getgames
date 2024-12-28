@@ -106,7 +106,10 @@ class GamePlatform {
         // 检查缓存
         if (this.imageCache.has(bh)) {
             const cachedUrl = this.imageCache.get(bh);
-            this.updateGameImages(bh, cachedUrl);
+            const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
+            imgElements.forEach(img => {
+                img.src = cachedUrl;
+            });
             return;
         }
 
@@ -124,20 +127,38 @@ class GamePlatform {
             // 解析INI内容
             const gameInfo = GameCrypto.parseIni(decryptedContent);
 
-            // 获取图片URL并声明变量
-            let imageUrl;
+            // 获取图片URL并验证
             if (gameInfo.C1 && gameInfo.C1.sc2) {
-                imageUrl = gameInfo.C1.sc2;
-                const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
-                imgElements.forEach(img => {
-                    img.src = imageUrl;
-                });
+                let imageUrl = gameInfo.C1.sc2;
 
-                // 只在有有效的imageUrl时才缓存
-                this.imageCache.set(bh, imageUrl);
+                // 验证URL格式
+                try {
+                    imageUrl = new URL(imageUrl).toString();
+
+                    // 更新图片元素
+                    const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
+                    imgElements.forEach(img => {
+                        img.src = imageUrl;
+                    });
+
+                    // 缓存有效的URL
+                    this.imageCache.set(bh, imageUrl);
+                } catch (urlError) {
+                    console.error(`无效的图片URL (BH: ${bh}):`, urlError);
+                    // 设置默认图片
+                    const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
+                    imgElements.forEach(img => {
+                        img.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E';
+                    });
+                }
             }
         } catch (error) {
             console.error(`加载游戏图片失败 (BH: ${bh}):`, error);
+            // 设置默认图片
+            const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
+            imgElements.forEach(img => {
+                img.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E';
+            });
         }
     }
 
@@ -296,7 +317,7 @@ class GamePlatform {
         const modalTitle = document.querySelector('#gameModal .modal-title');
         const modalBody = document.querySelector('#gameModal .modal-body');
 
-        // 获取游戏基本��息
+        // 获取游戏基本信息
         const updateDate = gameInfo.time?.sj || '未知日期';
         const gameDesc = gameInfo.zhu?.yxbb || '暂无描述';
         const gameImage = gameInfo.C1?.sc2 || '';

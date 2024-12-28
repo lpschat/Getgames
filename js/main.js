@@ -124,17 +124,16 @@ class GamePlatform {
             // 解析INI内容
             const gameInfo = GameCrypto.parseIni(decryptedContent);
 
-            // 获取图片URL
+            // 获取图片URL并声明变量
+            let imageUrl;
             if (gameInfo.C1 && gameInfo.C1.sc2) {
-                const imageUrl = gameInfo.C1.sc2;
+                imageUrl = gameInfo.C1.sc2;
                 const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
                 imgElements.forEach(img => {
                     img.src = imageUrl;
                 });
-            }
 
-            // 缓存图片URL
-            if (imageUrl) {
+                // 只在有有效的imageUrl时才缓存
                 this.imageCache.set(bh, imageUrl);
             }
         } catch (error) {
@@ -297,7 +296,7 @@ class GamePlatform {
         const modalTitle = document.querySelector('#gameModal .modal-title');
         const modalBody = document.querySelector('#gameModal .modal-body');
 
-        // 获取游戏基本信息
+        // 获取游戏基本��息
         const updateDate = gameInfo.time?.sj || '未知日期';
         const gameDesc = gameInfo.zhu?.yxbb || '暂无描述';
         const gameImage = gameInfo.C1?.sc2 || '';

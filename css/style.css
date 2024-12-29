@@ -363,3 +363,11 @@ html {
         opacity: 0;
     }
 }
+
+.navbar-logo {
+    height: 40px;
+    /* 调整logo高度 */
+    width: auto;
+    margin-right: 10px;
+    /* logo和标题之间的间距 */
+}

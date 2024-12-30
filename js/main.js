@@ -279,6 +279,22 @@ class GamePlatform {
         const newContent = document.createElement('div');
         newContent.className = 'game-detail-container fade-in';
 
+        // 构建下载链接
+        const downloads = [];
+        for (let i = 1; i <= 3; i++) {
+            const name = gameInfo.xiazai[`xiazai${i}_ming`];
+            const url = gameInfo.xiazai[`xiazai${i}_dizhi`];
+            const pwd = gameInfo.xiazai[`xiazai${i}_fwm`];
+
+            if (name && name !== 'WLCW' && url && url !== 'WLCW') {
+                downloads.push({
+                    name,
+                    url,
+                    pwd: pwd !== 'WLCW' ? pwd : null
+                });
+            }
+        }
+
         // 构建新内容
         newContent.innerHTML = `
             <div class="game-media-section">
@@ -295,8 +311,8 @@ class GamePlatform {
                         <div class="carousel-inner">
                             ${Object.entries(gameInfo.C1 || {})
                 .filter(([key, value]) => key.startsWith('sc') && value !== 'WLCW' && key !== 'sc1')
-                .map(([_, url]) => `
-                                    <div class="carousel-item">
+                .map(([_, url], index) => `
+                                    <div class="carousel-item ${index === 0 ? 'active' : ''}">
                                         <img src="${url}" class="d-block w-100" alt="游戏截图">
                                     </div>
                                 `).join('')}
@@ -321,16 +337,21 @@ class GamePlatform {
                 <p>${gameInfo.zhu?.yxbb || '暂无描述'}</p>
                 <div class="download-section mt-3">
                     <h5>下载链接</h5>
-                    ${Object.entries(gameInfo.xiazai || {})
-                .filter(([key, value]) => key.startsWith('xiazai') && value !== 'WLCW')
-                .map(([key, value]) => `
-                            <a href="${value}" target="_blank" class="list-group-item list-group-item-action">
-                                ${key.replace('xiazai', '下载')}
-                                ${gameInfo.xiazai[`xiazai${key.replace('xiazai', '')}_fwm`] !== 'WLCW' ? `
-                                    <span class="badge bg-secondary float-end">提取码: ${gameInfo.xiazai[`xiazai${key.replace('xiazai', '')}_fwm`]}</span>
-                                ` : ''}
-                            </a>
-                        `).join('')}
+                    ${downloads.length > 0 ? `
+                        <div class="list-group">
+                            ${downloads.map(dl => `
+                                <a href="${dl.url}" target="_blank" class="list-group-item list-group-item-action">
+                                    ${dl.name}
+                                    ${dl.pwd ? `<span class="badge bg-secondary float-end">提取码: ${dl.pwd}</span>` : ''}
+                                </a>
+                            `).join('')}
+                        </div>
+                        ${this.currentGame?.mm && this.currentGame.mm !== 'WLCW' ? `
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-key"></i> 解压密码：${this.currentGame.mm}
+                            </div>
+                        ` : ''}
+                    ` : '<p>暂无下载链接</p>'}
                 </div>
                 <div class="mt-3">
                     <small class="text-muted">更新时间: ${gameInfo.time?.sj || '未知日期'}</small>
@@ -341,6 +362,11 @@ class GamePlatform {
         // 使用淡入效果替换内容
         modalBody.innerHTML = '';
         modalBody.appendChild(newContent);
+
+        // 初始化新的轮播图
+        if (Object.entries(gameInfo.C1 || {}).filter(([key, value]) => key.startsWith('sc') && value !== 'WLCW' && key !== 'sc1').length > 0) {
+            new bootstrap.Carousel(document.getElementById('screenshotCarousel'));
+        }
     }
 
     // 添加加载状态管理

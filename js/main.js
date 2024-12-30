@@ -40,14 +40,21 @@ class GamePlatform {
     async initialize() {
         try {
             await this.loadGames();
-            this.renderGames(this.games);
+            // 确保 this.games 是一个数组
+            if (Array.isArray(this.games)) {
+                this.renderGames(this.games);
+            } else {
+                console.error('游戏数据格式错误:', this.games);
+                this.showError('数据加载失败');
+            }
         } catch (error) {
             console.error('初始化失败:', error);
+            this.showError('初始化失败，请刷新页面重试');
         }
     }
 
     async loadGames() {
-        this.showLoading(); // 显示加载状态
+        this.showLoading();
         try {
             const proxyUrl = 'https://works.lpdd.eu.org/games';
             const response = await fetch(proxyUrl);
@@ -57,6 +64,11 @@ class GamePlatform {
             }
 
             const data = await response.json();
+
+            // 确保 data.Content 是数组
+            if (!Array.isArray(data.Content)) {
+                throw new Error('Invalid data format: Content is not an array');
+            }
 
             // 修改解密逻辑，添加 mageA 字段
             this.games = await Promise.all(data.Content.map(async item => {
@@ -84,12 +96,16 @@ class GamePlatform {
                 }
             }));
 
+            // 确保解密后的数据是数组
+            if (!Array.isArray(this.games)) {
+                throw new Error('Failed to process game data');
+            }
+
             // 对整个游戏列表进行排序
             this.games.sort((a, b) => {
-                // 将日期字符串转换为时间戳进行比较
                 const dateA = new Date(a.riq.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).getTime();
                 const dateB = new Date(b.riq.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).getTime();
-                return dateB - dateA; // 降序排序，最新的在前
+                return dateB - dateA;
             });
 
             // 添加数据缓存
@@ -98,7 +114,10 @@ class GamePlatform {
                 data: this.games
             }));
         } catch (error) {
+            console.error('加载游戏数据失败:', error);
             this.showError('加载失败，请稍后重试');
+            // 确保即使出错也初始化为空数组
+            this.games = [];
         } finally {
             this.hideLoading();
         }

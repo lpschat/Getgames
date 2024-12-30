@@ -3,11 +3,11 @@ addEventListener('fetch', event => {
 })
 
 async function handleRequest(request) {
-    // 设置CORS头
+    // 修改 CORS 头配置
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Cache-Control, pragma, Origin, X-Requested-With, Accept',
     }
 
     // 处理OPTIONS请求
@@ -40,4 +40,4 @@ async function handleRequest(request) {
     })
 
     return newResponse
-} 
+}

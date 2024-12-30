@@ -58,7 +58,7 @@ class GamePlatform {
 
             const data = await response.json();
 
-            // 先解密所有数据
+            // 修改解密逻辑，添加 mageA 字段
             this.games = await Promise.all(data.Content.map(async item => {
                 try {
                     return {
@@ -67,7 +67,8 @@ class GamePlatform {
                         bh: await GameCrypto.decrypt(item.BH),
                         mm: await GameCrypto.decrypt(item.MM),
                         xingj: await GameCrypto.decrypt(item.XingJ),
-                        riq: await GameCrypto.decrypt(item.RiQ)
+                        riq: await GameCrypto.decrypt(item.RiQ),
+                        mageA: await GameCrypto.decrypt(item.MageA) // 添加封面图片
                     };
                 } catch (decryptError) {
                     console.error('游戏数据解密失败:', decryptError);
@@ -77,7 +78,8 @@ class GamePlatform {
                         bh: item.BH,
                         mm: item.MM,
                         xingj: item.XingJ,
-                        riq: item.RiQ
+                        riq: item.RiQ,
+                        mageA: item.MageA
                     };
                 }
             }));
@@ -102,79 +104,14 @@ class GamePlatform {
         }
     }
 
-    async loadGameImage(bh) {
-        // 检查缓存
-        if (this.imageCache.has(bh)) {
-            const cachedUrl = this.imageCache.get(bh);
-            const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
-            imgElements.forEach(img => {
-                img.src = cachedUrl;
-            });
-            return;
-        }
-
-        try {
-            const proxyUrl = `https://works.lpdd.eu.org/game/${bh}`;
-            const response = await fetch(proxyUrl);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const encryptedData = await response.arrayBuffer();
-            // 解密INI文件
-            const decryptedContent = GameCrypto.decryptIni(new Uint8Array(encryptedData));
-            // 解析INI内容
-            const gameInfo = GameCrypto.parseIni(decryptedContent);
-
-            // 获取图片URL并验证
-            if (gameInfo.C1 && gameInfo.C1.sc2) {
-                let imageUrl = gameInfo.C1.sc2;
-
-                // 验证URL格式
-                try {
-                    imageUrl = new URL(imageUrl).toString();
-
-                    // 更新图片元素
-                    const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
-                    imgElements.forEach(img => {
-                        img.src = imageUrl;
-                    });
-
-                    // 缓存有效的URL
-                    this.imageCache.set(bh, imageUrl);
-                } catch (urlError) {
-                    console.error(`无效的图片URL (BH: ${bh}):`, urlError);
-                    // 设置默认图片
-                    const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
-                    imgElements.forEach(img => {
-                        img.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E';
-                    });
-                }
-            }
-        } catch (error) {
-            console.error(`加载游戏图片失败 (BH: ${bh}):`, error);
-            // 设置默认图片
-            const imgElements = document.querySelectorAll(`img[data-bh="${bh}"]`);
-            imgElements.forEach(img => {
-                img.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E';
-            });
-        }
-    }
-
     renderGames(games) {
-        this.filteredGames = games; // 保存过滤后的游戏列表
+        this.filteredGames = games;
         const startIndex = (this.currentPage - 1) * this.gamesPerPage;
         const endIndex = startIndex + this.gamesPerPage;
         const gamesToShow = games.slice(startIndex, endIndex);
 
         const container = document.getElementById('gameGrid');
         container.innerHTML = gamesToShow.map(game => this.createGameCard(game)).join('');
-
-        // 加载当前页面的游戏图片
-        gamesToShow.forEach(game => {
-            this.loadGameImage(game.bh);
-        });
 
         // 渲染分页控件
         this.renderPagination();
@@ -228,16 +165,17 @@ class GamePlatform {
     }
 
     createGameCard(game) {
+        const imageUrl = game.mageA && game.mageA !== 'WLCW' ? game.mageA : 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E';
+
         return `
             <div class="col-md-3 col-sm-6">
                 <div class="game-card" data-bh="${game.bh}">
                     <div class="game-image-container">
                         <div class="image-placeholder"></div>
-                        <img src="" 
+                        <img src="${imageUrl}" 
                              class="game-image" 
                              alt="${game.name1}"
                              loading="lazy"
-                             data-bh="${game.bh}"
                              onload="this.classList.add('loaded')"
                              onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'16\'%3E暂无图片%3C/text%3E%3C/svg%3E'">
                     </div>

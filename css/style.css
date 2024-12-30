@@ -371,3 +371,67 @@ html {
     margin-right: 10px;
     /* logo和标题之间的间距 */
 }
+
+/* 模态框加载动画样式 */
+.game-detail-loading {
+    padding: 2rem;
+    text-align: center;
+}
+
+.loading-animation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.loading-text {
+    color: #666;
+    margin-top: 1rem;
+}
+
+/* 淡入动画效果 */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 游戏基本信息样式 */
+.game-basic-info {
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.game-title-section {
+    text-align: left;
+}
+
+.game-meta {
+    display: flex;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* 错误状态样式 */
+.game-detail-error {
+    padding: 3rem 1rem;
+}
+
+.error-icon {
+    color: #dc3545;
+}

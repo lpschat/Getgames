@@ -218,7 +218,10 @@ class GamePlatform {
         try {
             // 保存当前游戏信息
             this.currentGame = this.games.find(game => game.bh === bh);
-            console.log('当前游戏信息:', this.currentGame); // 调试输出
+
+            // 先显示基本信息和加载动画
+            this.showModalLoading();
+            this.modal.show();
 
             const iniUrl = `https://works.lpdd.eu.org/game/${bh}`;
             const response = await fetch(iniUrl);
@@ -228,10 +231,11 @@ class GamePlatform {
             const decryptedData = GameCrypto.decryptIni(new Uint8Array(encryptedData));
             const gameInfo = GameCrypto.parseIni(decryptedData);
 
+            // 更新模态框内容
             this.updateModalContent(gameInfo);
-            this.modal.show();
         } catch (error) {
             console.error('加载游戏详情失败:', error);
+            this.showModalError();
         }
     }
 
@@ -271,104 +275,72 @@ class GamePlatform {
     }
 
     updateModalContent(gameInfo) {
-        const modalTitle = document.querySelector('#gameModal .modal-title');
         const modalBody = document.querySelector('#gameModal .modal-body');
+        const newContent = document.createElement('div');
+        newContent.className = 'game-detail-container fade-in';
 
-        // 获取游戏基本信息
-        const updateDate = gameInfo.time?.sj || '未知日期';
-        const gameDesc = gameInfo.zhu?.yxbb || '暂无描述';
-        const gameImage = gameInfo.C1?.sc2 || '';
-        const videoUrl = gameInfo.C1?.sc1;
-
-        // 获取所有有效的游戏截图
-        const screenshots = Object.entries(gameInfo.C1 || {})
-            .filter(([key, value]) => key.startsWith('sc') && value !== 'WLCW' && key !== 'sc1')
-            .map(([_, url]) => url);
-
-        // 构建下载链接
-        const downloads = [];
-        for (let i = 1; i <= 3; i++) {
-            const name = gameInfo.xiazai[`xiazai${i}_ming`];
-            const url = gameInfo.xiazai[`xiazai${i}_dizhi`];
-            const pwd = gameInfo.xiazai[`xiazai${i}_fwm`];
-
-            if (name && name !== 'WLCW' && url && url !== 'WLCW') {
-                downloads.push({
-                    name,
-                    url,
-                    pwd: pwd !== 'WLCW' ? pwd : null
-                });
-            }
-        }
-
-        // 构建模态框内容
-        const content = `
-            <div class="game-detail-container">
-                <div class="game-media-section">
-                    ${videoUrl && videoUrl !== 'WLCW' ? `
-                        <div class="game-video-container mb-3">
-                            <video controls class="w-100">
-                                <source src="${videoUrl}" type="video/mp4">
-                                您的浏览器不支持视频播放。
-                            </video>
-                        </div>
-                    ` : ''}
-                    <div class="game-screenshots">
-                        <div id="screenshotCarousel" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                ${screenshots.map((url, index) => `
-                                    <div class="carousel-item ${index === 0 ? 'active' : ''}">
+        // 构建新内容
+        newContent.innerHTML = `
+            <div class="game-media-section">
+                ${gameInfo.C1?.sc1 && gameInfo.C1.sc1 !== 'WLCW' ? `
+                    <div class="game-video-container mb-3">
+                        <video controls class="w-100">
+                            <source src="${gameInfo.C1.sc1}" type="video/mp4">
+                            您的浏览器不支持视频播放。
+                        </video>
+                    </div>
+                ` : ''}
+                <div class="game-screenshots">
+                    <div id="screenshotCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            ${Object.entries(gameInfo.C1 || {})
+                .filter(([key, value]) => key.startsWith('sc') && value !== 'WLCW' && key !== 'sc1')
+                .map(([_, url]) => `
+                                    <div class="carousel-item">
                                         <img src="${url}" class="d-block w-100" alt="游戏截图">
                                     </div>
                                 `).join('')}
-                            </div>
-                            ${screenshots.length > 1 ? `
-                                <button class="carousel-control-prev" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">上一张</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">下一张</span>
-                                </button>
-                            ` : ''}
                         </div>
+                        ${Object.entries(gameInfo.C1 || {})
+                .filter(([key, value]) => key.startsWith('sc') && value !== 'WLCW' && key !== 'sc1')
+                .length > 1 ? `
+                            <button class="carousel-control-prev" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">上一张</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#screenshotCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">下一张</span>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
-                <div class="game-detail-info mt-3">
-                    <h5>游戏描述</h5>
-                    <p>${gameDesc}</p>
-                    <div class="download-section mt-3">
-                        <h5>下载链接</h5>
-                        ${downloads.length > 0 ? `
-                            <div class="list-group">
-                                ${downloads.map(dl => `
-                                    <a href="${dl.url}" target="_blank" class="list-group-item list-group-item-action">
-                                        ${dl.name}
-                                        ${dl.pwd ? `<span class="badge bg-secondary float-end">提取码: ${dl.pwd}</span>` : ''}
-                                    </a>
-                                `).join('')}
-                            </div>
-                            ${this.currentGame?.mm && this.currentGame.mm !== 'WLCW' ? `
-                                <div class="alert alert-info mt-3">
-                                    <i class="fas fa-key"></i> 解压密码：${this.currentGame.mm}
-                                </div>
-                            ` : ''}
-                        ` : '<p>暂无下载链接</p>'}
-                    </div>
-                    <div class="mt-3">
-                        <small class="text-muted">更新时间: ${updateDate}</small>
-                    </div>
+            </div>
+            <div class="game-detail-info mt-3">
+                <h5>游戏描述</h5>
+                <p>${gameInfo.zhu?.yxbb || '暂无描述'}</p>
+                <div class="download-section mt-3">
+                    <h5>下载链接</h5>
+                    ${Object.entries(gameInfo.xiazai || {})
+                .filter(([key, value]) => key.startsWith('xiazai') && value !== 'WLCW')
+                .map(([key, value]) => `
+                            <a href="${value}" target="_blank" class="list-group-item list-group-item-action">
+                                ${key.replace('xiazai', '下载')}
+                                ${gameInfo.xiazai[`xiazai${key.replace('xiazai', '')}_fwm`] !== 'WLCW' ? `
+                                    <span class="badge bg-secondary float-end">提取码: ${gameInfo.xiazai[`xiazai${key.replace('xiazai', '')}_fwm`]}</span>
+                                ` : ''}
+                            </a>
+                        `).join('')}
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">更新时间: ${gameInfo.time?.sj || '未知日期'}</small>
                 </div>
             </div>
         `;
 
-        modalBody.innerHTML = content;
-
-        // 初始化新的轮播图
-        if (screenshots.length > 0) {
-            new bootstrap.Carousel(document.getElementById('screenshotCarousel'));
-        }
+        // 使用淡入效果替换内容
+        modalBody.innerHTML = '';
+        modalBody.appendChild(newContent);
     }
 
     // 添加加载状态管理
@@ -406,6 +378,53 @@ class GamePlatform {
             toast.classList.add('fade-out');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    // 添加显示模态框加载状态的方法
+    showModalLoading() {
+        const modalTitle = document.querySelector('#gameModal .modal-title');
+        const modalBody = document.querySelector('#gameModal .modal-body');
+
+        // 如果有当前游戏信息，显示游戏名称
+        modalTitle.textContent = this.currentGame ? this.currentGame.name1 : '加载中...';
+
+        // 显示加载动画和基本信息
+        modalBody.innerHTML = `
+            <div class="game-detail-loading">
+                <div class="game-basic-info mb-4">
+                    ${this.currentGame ? `
+                        <div class="game-title-section mb-3">
+                            <h4>${this.currentGame.name1}</h4>
+                            <div class="game-meta">
+                                <span class="rating">${this.getStarRating(parseFloat(this.currentGame.xingj))}</span>
+                                <span class="update-date">更新时间: ${this.currentGame.riq}</span>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="loading-animation">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <div class="loading-text mt-2">正在加载游戏详情...</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 添加显示模态框错误状态的方法
+    showModalError() {
+        const modalBody = document.querySelector('#gameModal .modal-body');
+        modalBody.innerHTML = `
+            <div class="game-detail-error text-center">
+                <div class="error-icon mb-3">
+                    <i class="fas fa-exclamation-circle text-danger fa-3x"></i>
+                </div>
+                <h5 class="text-danger">加载失败</h5>
+                <p class="text-muted">抱歉，游戏详情加载失败，请稍后重试</p>
+                <button type="button" class="btn btn-primary mt-3" data-bs-dismiss="modal">关闭</button>
+            </div>
+        `;
     }
 }
 

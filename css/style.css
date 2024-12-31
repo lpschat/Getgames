@@ -435,3 +435,36 @@ html {
 .error-icon {
     color: #dc3545;
 }
+
+/* 检查并确保游戏卡片的网格布局正确 */
+.game-card {
+    margin-bottom: 20px;
+}
+
+/* 调整响应式布局 */
+@media (min-width: 1200px) {
+
+    /* 大屏幕下每行显示4个 */
+    .col-md-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+
+    /* 中等屏幕下每行显示3个 */
+    .col-md-3 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+@media (max-width: 767px) {
+
+    /* 小屏幕下每行显示2个 */
+    .col-sm-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}

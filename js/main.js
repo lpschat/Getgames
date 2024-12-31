@@ -129,10 +129,15 @@ class GamePlatform {
         const endIndex = startIndex + this.gamesPerPage;
         const gamesToShow = games.slice(startIndex, endIndex);
 
+        // 添加调试日志
+        console.log('Games per page:', this.gamesPerPage);
+        console.log('Games to show:', gamesToShow.length);
+        console.log('Start index:', startIndex);
+        console.log('End index:', endIndex);
+
         const container = document.getElementById('gameGrid');
         container.innerHTML = gamesToShow.map(game => this.createGameCard(game)).join('');
 
-        // 渲染分页控件
         this.renderPagination();
     }
 

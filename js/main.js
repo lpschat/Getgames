@@ -4,7 +4,7 @@ class GamePlatform {
         this.modal = new bootstrap.Modal(document.getElementById('gameModal'));
         this.initializeEventListeners();
         this.currentPage = 1;
-        this.gamesPerPage = 12; // 每页显示12个游戏
+        this.gamesPerPage = 16; // 每页显示12个游戏
         this.filteredGames = []; // 用于存储搜索过滤后的游戏
         this.imageCache = new Map(); // 添加图片缓存
         this.initializeLazyLoading();

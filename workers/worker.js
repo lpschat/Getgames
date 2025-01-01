@@ -10,11 +10,26 @@ async function handleRequest(request) {
         'Access-Control-Allow-Headers': 'Content-Type, Cache-Control, pragma, Origin, X-Requested-With, Accept',
     }
 
+    // 修改为12小时缓存
+    const cacheHeaders = {
+        ...corsHeaders,
+        'Cache-Control': 'public, max-age=43200', // 12小时 = 12 * 60 * 60 秒
+        'ETag': new Date().getTime().toString(), // 添加ETag
+    }
+
     // 处理OPTIONS请求
     if (request.method === 'OPTIONS') {
         return new Response(null, {
             headers: corsHeaders
         })
+    }
+
+    // 使用 Cloudflare 的缓存
+    const cache = caches.default
+    let response = await cache.match(request)
+
+    if (response) {
+        return response
     }
 
     const url = new URL(request.url)
@@ -30,14 +45,19 @@ async function handleRequest(request) {
         return new Response('Not Found', { status: 404 })
     }
 
-    // 转发请求到目标服务器
-    const response = await fetch(targetUrl)
-    const newResponse = new Response(response.body, response)
+    response = await fetch(targetUrl)
 
-    // 添加CORS头
-    Object.entries(corsHeaders).forEach(([key, value]) => {
-        newResponse.headers.set(key, value)
+    // 创建新的响应并添加缓存头
+    const newResponse = new Response(response.body, {
+        ...response,
+        headers: {
+            ...Object.fromEntries(response.headers),
+            ...cacheHeaders
+        }
     })
+
+    // 存入 Cloudflare 缓存
+    await cache.put(request, newResponse.clone())
 
     return newResponse
 }

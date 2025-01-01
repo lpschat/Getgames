@@ -56,8 +56,23 @@ class GamePlatform {
     async loadGames() {
         this.showLoading();
         try {
+            // 检查本地缓存
+            const cachedData = localStorage.getItem('gamesCache');
+            if (cachedData) {
+                const { timestamp, data } = JSON.parse(cachedData);
+                // 缓存时间小于12小时则使用缓存
+                if (Date.now() - timestamp < 43200000) {
+                    this.games = data;
+                    return;
+                }
+            }
+
             const proxyUrl = 'https://works.lpdd.eu.org/games';
-            const response = await fetch(proxyUrl);
+            const response = await fetch(proxyUrl, {
+                headers: {
+                    'Cache-Control': 'max-age=3600',
+                }
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -108,16 +123,23 @@ class GamePlatform {
                 return dateB - dateA;
             });
 
-            // 添加数据缓存
+            // 更新本地缓存
             localStorage.setItem('gamesCache', JSON.stringify({
                 timestamp: Date.now(),
                 data: this.games
             }));
         } catch (error) {
             console.error('加载游戏数据失败:', error);
-            this.showError('加载失败，请稍后重试');
-            // 确保即使出错也初始化为空数组
-            this.games = [];
+            // 如果有缓存数据，在请求失败时使用缓存
+            const cachedData = localStorage.getItem('gamesCache');
+            if (cachedData) {
+                const { data } = JSON.parse(cachedData);
+                this.games = data;
+                this.showError('使用缓存数据显示');
+            } else {
+                this.showError('加载失败，请稍后重试');
+                this.games = [];
+            }
         } finally {
             this.hideLoading();
         }

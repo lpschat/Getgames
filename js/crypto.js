@@ -1,6 +1,6 @@
 class GameCrypto {
     static async decrypt(encryptedText) {
-        const key = CryptoJS.enc.Utf8.parse('consmkey');
+        const key = CryptoJS.enc.Utf8.parse('lI8jU58w'); //原key:consmkey
         const iv = CryptoJS.enc.Hex.parse('1234567890abcdef');
 
         const decrypted = CryptoJS.DES.decrypt(

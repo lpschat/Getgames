@@ -481,8 +481,43 @@ class GamePlatform {
     }
 }
 
-// 初始化应用
-document.addEventListener('DOMContentLoaded', () => {
+// 设置正确的密码
+const CORRECT_PASSWORD = "821024"; // 你可以修改这个密码
+
+// 创建一个新的初始化函数来控制游戏平台的加载
+function initializeAfterPassword() {
     const platform = new GamePlatform();
     platform.initialize();
+}
+
+function checkPassword() {
+    const passwordInput = document.getElementById('password-input');
+    const errorMessage = document.getElementById('error-message');
+    const passwordScreen = document.getElementById('password-screen');
+    const mainContent = document.getElementById('main-content');
+
+    if (passwordInput.value === CORRECT_PASSWORD) {
+        // 密码正确，隐藏密码界面，显示主内容
+        passwordScreen.style.display = 'none';
+        mainContent.style.display = 'block';
+        // 只在密码正确时初始化游戏平台
+        initializeAfterPassword();
+    } else {
+        // 密码错误，显示错误信息
+        errorMessage.textContent = '密码错误，请重试';
+        passwordInput.value = '';
+    }
+}
+
+// 页面加载时只设置密码验证相关的监听
+document.addEventListener('DOMContentLoaded', function () {
+    const mainContent = document.getElementById('main-content');
+    mainContent.style.display = 'none';
+
+    // 添加回车键监听
+    document.getElementById('password-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkPassword();
+        }
+    });
 });

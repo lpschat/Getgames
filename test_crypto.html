@@ -66,15 +66,19 @@
                     encryptedBytes[i] = encryptedData.charCodeAt(i);
                 }
 
-                // 使用CryptoJS进行DES解密
-                const wordArray = CryptoJS.lib.WordArray.create(encryptedBytes);
+                // 固定的IV值
+                const iv = CryptoJS.enc.Utf8.parse('12345678');
+                // 使用用户输入的key
                 const keyWordArray = CryptoJS.enc.Utf8.parse(key);
 
+                // 使用CryptoJS进行DES解密
+                const wordArray = CryptoJS.lib.WordArray.create(encryptedBytes);
                 const decrypted = CryptoJS.DES.decrypt(
                     { ciphertext: wordArray },
                     keyWordArray,
                     {
-                        mode: CryptoJS.mode.ECB,
+                        iv: iv,
+                        mode: CryptoJS.mode.CBC,
                         padding: CryptoJS.pad.Pkcs7
                     }
                 );

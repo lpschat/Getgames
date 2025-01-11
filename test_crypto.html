@@ -40,6 +40,7 @@
 
     <div class="test-section">
         <h2>DES 解密测试</h2>
+        <input type="text" id="keyInput" placeholder="输入解密密钥..." style="width: 100%; margin-bottom: 10px;">
         <textarea id="encryptedInput" placeholder="输入Base64编码的加密文本..."></textarea>
         <button onclick="testDecrypt()">解密</button>
         <div id="decryptResult" class="result"></div>
@@ -54,18 +55,110 @@
 
     <!-- 引入必要的库 -->
     <script src="static/js/lib/crypto-js.min.js"></script>
-    <script src="js/crypto.js"></script>
     <script>
+        // DES解密函数实现
+        async function decrypt(encryptedBase64, key) {
+            try {
+                // 将Base64转换为字节数组
+                const encryptedData = atob(encryptedBase64);
+                const encryptedBytes = new Uint8Array(encryptedData.length);
+                for (let i = 0; i < encryptedData.length; i++) {
+                    encryptedBytes[i] = encryptedData.charCodeAt(i);
+                }
+
+                // 使用CryptoJS进行DES解密
+                const wordArray = CryptoJS.lib.WordArray.create(encryptedBytes);
+                const keyWordArray = CryptoJS.enc.Utf8.parse(key);
+
+                const decrypted = CryptoJS.DES.decrypt(
+                    { ciphertext: wordArray },
+                    keyWordArray,
+                    {
+                        mode: CryptoJS.mode.ECB,
+                        padding: CryptoJS.pad.Pkcs7
+                    }
+                );
+
+                return decrypted.toString(CryptoJS.enc.Utf8);
+            } catch (error) {
+                throw new Error('解密失败: ' + error.message);
+            }
+        }
+
+        // INI文件解密函数实现
+        function decryptIni(encryptedData) {
+            const key = new Uint8Array([0x13, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00]);
+            const result = new Uint8Array(encryptedData.length);
+
+            for (let i = 0; i < encryptedData.length; i++) {
+                result[i] = encryptedData[i] ^ key[i % key.length];
+            }
+
+            // 将解密后的字节数组转换为字符串
+            const decoder = new TextDecoder('utf-8');
+            return decoder.decode(result);
+        }
+
+        // INI解析函数实现
+        function parseIni(iniString) {
+            const result = {};
+            let currentSection = '';
+
+            const lines = iniString.split(/\r?\n/);
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+
+                // 跳过空行和注释
+                if (!trimmedLine || trimmedLine.startsWith(';')) {
+                    continue;
+                }
+
+                // 处理节名
+                if (trimmedLine.startsWith('[') && trimmedLine.endsWith(']')) {
+                    currentSection = trimmedLine.slice(1, -1);
+                    if (!result[currentSection]) {
+                        result[currentSection] = {};
+                    }
+                    continue;
+                }
+
+                // 处理键值对
+                const separatorIndex = trimmedLine.indexOf('=');
+                if (separatorIndex !== -1) {
+                    const key = trimmedLine.slice(0, separatorIndex).trim();
+                    const value = trimmedLine.slice(separatorIndex + 1).trim();
+
+                    if (currentSection) {
+                        result[currentSection][key] = value;
+                    } else {
+                        result[key] = value;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // 测试解密函数
         async function testDecrypt() {
             const input = document.getElementById('encryptedInput').value;
+            const key = document.getElementById('keyInput').value;
+
+            if (!key) {
+                document.getElementById('decryptResult').textContent = '请输入解密密钥';
+                return;
+            }
+
             try {
-                const decrypted = await GameCrypto.decrypt(input);
+                const decrypted = await decrypt(input, key);
                 document.getElementById('decryptResult').textContent = decrypted;
             } catch (error) {
                 document.getElementById('decryptResult').textContent = '解密错误: ' + error.message;
             }
         }
 
+        // 测试INI文件解密函数
         async function testDecryptIni() {
             const fileInput = document.getElementById('iniFile');
             const file = fileInput.files[0];
@@ -77,8 +170,8 @@
             const reader = new FileReader();
             reader.onload = async function (e) {
                 const encryptedData = new Uint8Array(e.target.result);
-                const decrypted = GameCrypto.decryptIni(encryptedData);
-                const parsed = GameCrypto.parseIni(decrypted);
+                const decrypted = decryptIni(encryptedData);
+                const parsed = parseIni(decrypted);
                 document.getElementById('iniResult').textContent =
                     '解密后的INI内容:\n' + decrypted +
                     '\n\n解析后的对象:\n' + JSON.stringify(parsed, null, 2);

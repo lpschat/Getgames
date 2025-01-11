@@ -92,16 +92,35 @@
 
         // INI文件解密函数实现
         function decryptIni(encryptedData) {
-            const key = new Uint8Array([0x13, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00]);
-            const result = new Uint8Array(encryptedData.length);
+            try {
+                // 对每个字节进行异或185操作
+                const result = new Uint8Array(encryptedData.length);
+                for (let i = 0; i < encryptedData.length; i++) {
+                    result[i] = encryptedData[i] ^ 185;
+                }
 
-            for (let i = 0; i < encryptedData.length; i++) {
-                result[i] = encryptedData[i] ^ key[i % key.length];
+                // 使用GBK解码
+                try {
+                    if (typeof TextDecoder !== 'undefined') {
+                        try {
+                            // 首先尝试使用GBK
+                            return new TextDecoder('gbk').decode(result);
+                        } catch (e) {
+                            // 如果GBK不可用，尝试使用GB18030（GBK的超集）
+                            return new TextDecoder('gb18030').decode(result);
+                        }
+                    } else {
+                        // 如果TextDecoder不可用，使用text-encoding polyfill
+                        return new TextDecoder('gbk', { NONSTANDARD_allowLegacyEncoding: true }).decode(result);
+                    }
+                } catch (e) {
+                    console.warn('GBK解码失败，回退到UTF-8:', e);
+                    return new TextDecoder('utf-8').decode(result);
+                }
+            } catch (error) {
+                console.error('INI解密失败:', error);
+                return encryptedData;
             }
-
-            // 使用 GBK 解码
-            const decoder = new TextDecoder('GBK');
-            return decoder.decode(result);
         }
 
         // INI解析函数实现

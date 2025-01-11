@@ -55,6 +55,7 @@
 
     <!-- 引入必要的库 -->
     <script src="static/js/lib/crypto-js.min.js"></script>
+    <script src="static/js/lib/encoding.min.js"></script>
     <script>
         // DES解密函数实现
         async function decrypt(encryptedBase64, key) {
@@ -98,8 +99,8 @@
                 result[i] = encryptedData[i] ^ key[i % key.length];
             }
 
-            // 将解密后的字节数组转换为字符串
-            const decoder = new TextDecoder('utf-8');
+            // 使用 GBK 解码
+            const decoder = new TextDecoder('GBK');
             return decoder.decode(result);
         }
 

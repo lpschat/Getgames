@@ -67,7 +67,7 @@
                 }
 
                 // 固定的IV值
-                const iv = CryptoJS.enc.Utf8.parse('12345678');
+                const iv = CryptoJS.enc.Hex.parse('1234567890abcdef');
                 // 使用用户输入的key
                 const keyWordArray = CryptoJS.enc.Utf8.parse(key);
 
